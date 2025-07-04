@@ -3,10 +3,21 @@
 > [!CAUTION]
 > This library is in development. It is not feature-complete but is usable. Please report any issues you find.
 
+### Features
+- [x] Proximity voice chat
+- [x] Sound categories
+- [ ] Groups
+- [ ] Customisation
+  - [ ] Codec
+  - [x] Distance
+  - [ ] MTU
+  - [ ] Keepalive interval
+  - [ ] Recording
+
 ```kts
 repositories {
-    mavenCentral()
-    mavenLocal() // this library currently needs local publishing
+    mavenCentral() // minestom
+    maven("https://repo.hypera.dev/snapshots/") // simple-voice-chat-minestom
 }
 
 dependencies {

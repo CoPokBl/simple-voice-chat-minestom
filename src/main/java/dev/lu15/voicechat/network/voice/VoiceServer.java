@@ -3,10 +3,10 @@ package dev.lu15.voicechat.network.voice;
 import dev.lu15.voicechat.SoundSources;
 import dev.lu15.voicechat.Tags;
 import dev.lu15.voicechat.VoiceChat;
-import dev.lu15.voicechat.VoiceState;
+import dev.lu15.voicechat.network.minecraft.VoiceState;
 import dev.lu15.voicechat.event.PlayerJoinVoiceChatEvent;
 import dev.lu15.voicechat.event.PlayerMicrophoneEvent;
-import dev.lu15.voicechat.network.minecraft.packets.VoiceStatesPacket;
+import dev.lu15.voicechat.network.minecraft.packets.clientbound.VoiceStatesPacket;
 import dev.lu15.voicechat.network.voice.encryption.SecretUtilities;
 import dev.lu15.voicechat.network.voice.packets.AuthenticatePacket;
 import dev.lu15.voicechat.network.voice.packets.AuthenticationAcknowledgedPacket;
@@ -23,6 +23,7 @@ import java.net.SocketException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -44,7 +45,7 @@ public final class VoiceServer {
 
     private final @NotNull VoiceSocket socket = new VoiceSocket();
     private final @NotNull VoicePacketHandler packetHandler = new VoicePacketHandler();
-    private final @NotNull LinkedBlockingQueue<RawPacket> packetQueue = new LinkedBlockingQueue<>();
+    private final @NotNull BlockingQueue<RawPacket> packetQueue = new LinkedBlockingQueue<>();
     private final @NotNull Map<SocketAddress, Player> connections = new HashMap<>();
 
     private final @NotNull VoiceChat voiceChat;
@@ -116,7 +117,8 @@ public final class VoiceServer {
                 RawPacket rawPacket = this.packetQueue.poll(10, TimeUnit.MILLISECONDS);
                 if (rawPacket == null) continue;
 
-                VoicePacket packet = this.packetHandler.read(rawPacket);
+                VoicePacket<?> packet = this.packetHandler.read(rawPacket);
+                if (packet == null) continue;
 
                 if (System.currentTimeMillis() - rawPacket.timestamp() > packet.ttl()) {
                     LOGGER.error("dropping expired voice packet: {}", packet);
@@ -158,7 +160,7 @@ public final class VoiceServer {
         }
     }
 
-    public void write(@NotNull Player player, @NotNull VoicePacket packet) {
+    public <T extends VoicePacket<T>> void write(@NotNull Player player, @NotNull T packet) {
         try {
             this.write0(player, packet);
         } catch (IOException e) {
@@ -168,7 +170,7 @@ public final class VoiceServer {
         }
     }
 
-    private void write0(@NotNull Player player, @NotNull VoicePacket packet) throws IOException {
+    private <T extends VoicePacket<T>> void write0(@NotNull Player player, @NotNull T packet) throws IOException {
         SocketAddress address = this.retrieveSocketAddress(player);
         if (address == null) return;
 
@@ -246,7 +248,7 @@ public final class VoiceServer {
 
             event.getSoundSelector().canHear(player).stream().filter(p -> {
                 if (p.equals(player)) return false;
-                return !p.hasTag(Tags.PLAYER_STATE) || !p.getTag(Tags.PLAYER_STATE).isDisabled();
+                return !p.hasTag(Tags.PLAYER_STATE) || !p.getTag(Tags.PLAYER_STATE).disabled();
             }).forEach(p -> this.write(p, soundPacket));
         });
     }

@@ -1,8 +1,8 @@
 plugins {
     `java-library`
+    signing
     id("net.kyori.indra")
     id("net.kyori.indra.publishing")
-    id("net.kyori.indra.publishing.sonatype")
     id("net.ltgt.errorprone") version "4.0.1"
     id("maven-publish")
 }
@@ -15,6 +15,9 @@ indra {
     github("LooFifteen", "simple-voice-chat-minestom") {
         ci(true)
     }
+
+    signWithKeyFromPrefixedProperties("ci")
+    publishSnapshotsTo("hyperaSnapshots", "https://repo.hypera.dev/snapshots/")
 
     javaVersions {
         target(21)
@@ -37,17 +40,13 @@ indra {
     }
 }
 
-indraSonatype {
-    useAlternateSonatypeOSSHost("s01")
-}
-
 repositories {
     mavenCentral()
 }
 
 dependencies {
     // minestom
-    val minestom = "net.minestom:minestom-snapshots:b1ad94cd1b"
+    val minestom = "net.minestom:minestom-snapshots:7b659f0fc3"
     compileOnly(minestom)
     testImplementation(minestom)
 

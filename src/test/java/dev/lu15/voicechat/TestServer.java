@@ -1,12 +1,13 @@
 package dev.lu15.voicechat;
 
+import dev.lu15.voicechat.network.minecraft.Category;
 import dev.lu15.voicechat.event.PlayerJoinVoiceChatEvent;
 import net.kyori.adventure.text.Component;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.advancements.FrameType;
-import net.minestom.server.advancements.notifications.Notification;
-import net.minestom.server.advancements.notifications.NotificationCenter;
+import net.minestom.server.advancements.Notification;
 import net.minestom.server.coordinate.Pos;
+import net.minestom.server.entity.Player;
 import net.minestom.server.event.player.AsyncPlayerConfigurationEvent;
 import net.minestom.server.extras.MojangAuth;
 import net.minestom.server.extras.lan.OpenToLAN;
@@ -34,9 +35,13 @@ public final class TestServer {
         });
 
         VoiceChat voicechat = VoiceChat.builder("0.0.0.0", 25565).enable();
+        voicechat.addCategory(NamespaceID.from("voicechat", "test"), new Category("Test", "A test category", null));
 
         Notification notification = new Notification(Component.text("Connected to voice chat"), FrameType.GOAL, Material.NOTE_BLOCK);
-        MinecraftServer.getGlobalEventHandler().addListener(PlayerJoinVoiceChatEvent.class, event -> NotificationCenter.send(notification, event.getPlayer()));
+        MinecraftServer.getGlobalEventHandler().addListener(PlayerJoinVoiceChatEvent.class, event -> {
+            final Player player = event.getPlayer();
+            player.sendNotification(notification);
+        });
 
         OpenToLAN.open();
         MojangAuth.init();
